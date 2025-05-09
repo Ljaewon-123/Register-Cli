@@ -19,22 +19,25 @@ func ShowCategory() {
 	}
 
 	if len(cli.Categories) == 0 {
-		fmt.Println("카테고리가 없습니다.")
+		fmt.Println("Not found category.")
 		return
 	}
 
 	// 카테고리 이름 목록 만들기
-	categoryNames := []string{}
-	for _, cat := range cli.Categories {
-		categoryNames = append(categoryNames, cat.Name)
+	categoryNames := make([]string, len(cli.Categories))
+	for i, cat := range cli.Categories {
+		categoryNames[i] = cat.Name
 	}
 
 	var selectedCategory string
 	categoryPrompt := &survey.Select{
-		Message: "카테고리를 선택하세요:",
+		Message: "Please select a category:",
 		Options: categoryNames,
 	}
-	survey.AskOne(categoryPrompt, &selectedCategory)
+	if err := survey.AskOne(categoryPrompt, &selectedCategory); err != nil {
+		fmt.Println("Category selection error:", err)
+		return
+	}
 
 	// 선택된 카테고리에서 명령어 가져오기
 	var selectedCommands []register.Command
@@ -46,29 +49,40 @@ func ShowCategory() {
 	}
 
 	if len(selectedCommands) == 0 {
-		fmt.Println("명령어가 없습니다.")
+		fmt.Println("Not found command.")
 		return
 	}
 
-	// 명령어 설명 목록 만들기
+	// 표시용 옵션 만들기 + 매핑
 	commandOptions := []string{}
-	cmdMap := make(map[string]string) // description → actual command
+	displayToCmd := make(map[string]string)
+
 	for _, cmd := range selectedCommands {
-		commandOptions = append(commandOptions, cmd.Description)
-		cmdMap[cmd.Description] = cmd.Command
+		display := fmt.Sprintf("%s\n  :: description: %s", cmd.Command, cmd.Description)
+		commandOptions = append(commandOptions, display)
+		displayToCmd[display] = cmd.Command
 	}
 
-	var selectedDesc string
-	cmdPrompt := &survey.Select{
-		Message: "실행할 명령어를 선택하세요:",
+	var selectedDisplays []string
+	cmdPrompt := &survey.MultiSelect{
+		Message: "Select multiple commands to run (select with spacebar):",
 		Options: commandOptions,
 	}
-	survey.AskOne(cmdPrompt, &selectedDesc)
+	if err := survey.AskOne(cmdPrompt, &selectedDisplays); err != nil {
+		fmt.Println("Command selection error:", err)
+		return
+	}
 
-	// 실제 명령어 실행
-	finalCmd := cmdMap[selectedDesc]
-	fmt.Printf("\n[실행 중] %s\n\n", finalCmd)
-	runCommand(finalCmd)
+	if len(selectedDisplays) == 0 {
+		fmt.Println("Not found command.")
+		return
+	}
+
+	for _, display := range selectedDisplays {
+		cmdStr := displayToCmd[display]
+		fmt.Printf("\n[==running==] %s\n", cmdStr)
+		runCommand(cmdStr)
+	}
 }
 
 func loadCli(filename string) (register.Cli, error) {
@@ -96,6 +110,6 @@ func runCommand(command string) {
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
-		fmt.Printf("명령어 실행 실패: %v\n", err)
+		fmt.Printf("Command running is failed: %v\n", err)
 	}
 }

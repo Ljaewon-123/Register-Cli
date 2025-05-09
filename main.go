@@ -18,7 +18,7 @@ func main() {
 	fmt.Println("3. Exit")
 
 	var choice int
-	fmt.Print("옵션 번호 입력: ")
+	fmt.Print("Select number: ")
 	_, err := fmt.Scan(&choice)
 
 	if err != nil {
@@ -31,29 +31,29 @@ func main() {
 
 	switch choice {
 	case 1:
-		fmt.Println("카테고리 보여주기")
+		fmt.Println("Show category")
 		category.ShowCategory()
 	case 2:
 		createNewCommand(reader)
 	case 3:
-		fmt.Println("종료하기")
+		fmt.Println("exit")
 	default:
-		fmt.Println("잘못된 번호입니다.")
+		fmt.Println("Wrong number.")
 	}
 }
 
 func createNewCommand(reader *bufio.Reader) {
-	fmt.Println("명령어 등록하기")
+	fmt.Println("Register command")
 
-	fmt.Print("등록할 카테고리 입력: ")
+	fmt.Print("Enter the category to register: ")
 	category, _ := reader.ReadString('\n')
 	category = strings.TrimSpace(category) // 개행 문자 제거
 
-	fmt.Print("명령어 설명 입력: ")
+	fmt.Print("Enter command description: ")
 	description, _ := reader.ReadString('\n')
 	description = strings.TrimSpace(description)
 
-	fmt.Print("명령어 입력: ")
+	fmt.Print("Enter command: ")
 	command, _ := reader.ReadString('\n')
 	command = strings.TrimSpace(command)
 
