@@ -2,6 +2,7 @@ package category
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,15 +12,26 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 )
 
+// 에러 정의
+var (
+	errNotFoundCategory  = errors.New("category not found")
+	errNotFoundCommand   = errors.New("command not found")
+	errCategorySelection = errors.New("category selection error")
+	errCommandSelection  = errors.New("command selection error")
+	errCommandExecution  = errors.New("command execution failed")
+)
+
 func ShowCategory() {
 	cli, err := loadCli("command.json")
 	if err != nil {
-		fmt.Println("Error loading commands:", err)
+		// 에러 반환
+		handleError(err)
 		return
 	}
 
 	if len(cli.Categories) == 0 {
-		fmt.Println("Not found category.")
+		// 카테고리 없음
+		handleError(errNotFoundCategory)
 		return
 	}
 
@@ -35,7 +47,8 @@ func ShowCategory() {
 		Options: categoryNames,
 	}
 	if err := survey.AskOne(categoryPrompt, &selectedCategory); err != nil {
-		fmt.Println("Category selection error:", err)
+		// 카테고리 선택 오류
+		handleError(errCategorySelection)
 		return
 	}
 
@@ -49,7 +62,8 @@ func ShowCategory() {
 	}
 
 	if len(selectedCommands) == 0 {
-		fmt.Println("Not found command.")
+		// 명령어 없음
+		handleError(errNotFoundCommand)
 		return
 	}
 
@@ -69,19 +83,32 @@ func ShowCategory() {
 		Options: commandOptions,
 	}
 	if err := survey.AskOne(cmdPrompt, &selectedDisplays); err != nil {
-		fmt.Println("Command selection error:", err)
+		// 명령어 선택 오류
+		handleError(errCommandSelection)
 		return
 	}
 
 	if len(selectedDisplays) == 0 {
-		fmt.Println("Not found command.")
+		// 명령어 없음
+		handleError(errNotFoundCommand)
 		return
 	}
 
 	for _, display := range selectedDisplays {
 		cmdStr := displayToCmd[display]
 		fmt.Printf("\n[==running==] %s\n", cmdStr)
-		runCommand(cmdStr)
+		err := runCommand(cmdStr)
+		if err != nil {
+			handleError(err)
+			return
+		}
+	}
+}
+
+// 에러 처리 함수
+func handleError(err error) {
+	if err != nil {
+		fmt.Printf("[Error] %v\n", err) // 오류 메시지 출력
 	}
 }
 
@@ -102,7 +129,7 @@ func loadCli(filename string) (register.Cli, error) {
 	return cli, nil
 }
 
-func runCommand(command string) {
+func runCommand(command string) error {
 	cmd := exec.Command("sh", "-c", command) // macOS/Linux
 	// cmd := exec.Command("cmd", "/C", command) // Windows용일 경우
 
@@ -110,6 +137,7 @@ func runCommand(command string) {
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
-		fmt.Printf("Command running is failed: %v\n", err)
+		return fmt.Errorf("%w: %v", errCommandExecution, err) // 명령어 실행 실패 오류 반환
 	}
+	return nil
 }
