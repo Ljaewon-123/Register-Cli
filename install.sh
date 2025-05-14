@@ -2,15 +2,15 @@
 
 set -e
 
-# 다운로드 URL 베이스 (버전에 맞게 수정하세요)
+# Base download URL (update version as needed)
 VERSION="v1.0.0"
 BASE_URL="https://github.com/Ljaewon-123/register-cli/releases/download/$VERSION"
 
-# 설치 위치
+# Installation directory
 INSTALL_DIR="$HOME/.local/bin"
 mkdir -p "$INSTALL_DIR"
 
-# OS 구분
+# Detect OS
 OS=$(uname -s)
 FILE=""
 BIN_NAME="register-cli"
@@ -25,26 +25,26 @@ elif [[ "$OS" == MINGW* || "$OS" == CYGWIN* || "$OS" == MSYS* ]]; then
     mkdir -p "$INSTALL_DIR"
     BIN_NAME="register-cli.exe"
 else
-    echo "❌ 지원되지 않는 운영체제: $OS"
+    echo "❌ Unsupported operating system: $OS"
     exit 1
 fi
 
-# 다운로드 및 설치
-echo "⬇️  $FILE 다운로드 중..."
+# Download and install
+echo "⬇️  Downloading $FILE..."
 curl -L "$BASE_URL/$FILE" -o "$INSTALL_DIR/$BIN_NAME"
 chmod +x "$INSTALL_DIR/$BIN_NAME"
 
-# PATH에 등록
+# Add to PATH
 if [[ "$OS" == "Linux" || "$OS" == "Darwin" ]]; then
     if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
         SHELL_RC="$HOME/.bashrc"
         [[ "$SHELL" == *zsh ]] && SHELL_RC="$HOME/.zshrc"
         echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$SHELL_RC"
-        echo "🔧 PATH에 등록 완료 (다음 셸에서 적용됨)"
+        echo "🔧 Added to PATH (will take effect in next shell session)"
     fi
-    echo "✅ 설치 완료! 터미널에서 'register-cli' 실행 가능"
+    echo "✅ Installation complete! You can now run 'register-cli' from the terminal."
 else
-    # Windows는 PATH 수동 설정 또는 PowerShell 필요
-    echo "✅ 설치 완료: $INSTALL_DIR\\register-cli.exe"
-    echo "👉 Windows는 PATH에 수동 등록하거나 PowerShell 스크립트 사용 필요"
+    # Windows: PATH needs to be set manually or via PowerShell
+    echo "✅ Installation complete: $INSTALL_DIR\\register-cli.exe"
+    echo "👉 On Windows, add the path to your system PATH manually or use a PowerShell script."
 fi
