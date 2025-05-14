@@ -1,52 +1,46 @@
-name: Build and Release
+name: Release
 
 on:
   push:
     tags:
-      - 'v*' # v1.0.0과 같은 버전 태그가 푸시될 때마다 트리거됨
+      - 'v*'  # 예: v1.0.0 같은 태그가 푸시될 때 트리거됨
 
 jobs:
   build:
+    name: Build and Release
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 체크아웃 리포지토리
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      # 2. Go 환경 설정
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.24.2'  # 원하는 Go 버전 설정
+          go-version: '1.24.2'
 
-      # 3. 종속성 설치 및 빌드
-      - name: Install dependencies and build
-        run: |
-          go mod tidy
-          go build -o register-cli
+      - name: Create dist directory
+        run: mkdir -p dist
 
-      # 4. 설치 스크립트 (install.sh) 복사
+      - name: Build for Linux
+        run: GOOS=linux GOARCH=amd64 go build -o dist/register-cli-linux
+
+      - name: Build for macOS
+        run: GOOS=darwin GOARCH=amd64 go build -o dist/register-cli-macos
+
+      - name: Build for Windows
+        run: GOOS=windows GOARCH=amd64 go build -o dist/register-cli.exe
+
       - name: Copy install.sh
         run: cp install.sh dist/
 
-      # 5. GitHub Release 생성
-      - name: Create GitHub release
-        id: create_release
+      - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/register-cli
+            dist/register-cli-linux
+            dist/register-cli-macos
+            dist/register-cli.exe
             dist/install.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
-  # 6. 생성된 Release 확인 (선택 사항)
-  verify-release:
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Check release assets
-        run: |
-          echo "Release files available: $(ls dist)"
